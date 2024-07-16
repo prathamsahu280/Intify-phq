@@ -26,9 +26,8 @@ const App = () => {
   const [selectedSheet, setSelectedSheet] = useState<string>('');
   const [columnMapping, setColumnMapping] = useState<Record<string, string> | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
-  const [usedFilters, setUsedFilters] = useState<string[]>([]);
-  const [usedLegends, setUsedLegends] = useState<string[]>([]);
-
+  const [usedFilters, setUsedFilters] = useState<{ [key: string]: string }>({});
+  const [usedLegends, setUsedLegends] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     const storedId = Cookies.get('spreadsheetId');
@@ -51,15 +50,16 @@ const App = () => {
     // Cookies.set('columnMapping', JSON.stringify(mapping), { expires: 30 });
   }
 
-  const handleFilterComplete = (filters: string[]) => {
+  const handleFilterComplete = (filters: { [key: string]: string }) => {
     setUsedFilters(filters);
     // Cookies.set('usedFilters', JSON.stringify(filters), { expires: 30 });
   }
 
-  const handleLegendComplete = (legends: string[]) => {
+  const handleLegendComplete = (legends: { [key: string]: string }) => {
     setUsedLegends(legends);
     // Cookies.set('usedLegends', JSON.stringify(legends), { expires: 30 });
   }
+
   useEffect(() => {
     if (spreadsheetId && selectedSheet) {
       // Fetch all headers from the selected sheet
@@ -85,13 +85,13 @@ const App = () => {
         <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
           <ColumnMapping spreadsheetId={spreadsheetId} sheetName={selectedSheet} onMappingComplete={handleMappingComplete} />
         </div>
-      ) : usedFilters.length === 0 ? (
+      ) : Object.keys(usedFilters).length === 0 ? (
         <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <FilterSelection headers={headers} onComplete={handleFilterComplete} />
+          <FilterSelection headers={headers} onComplete={handleFilterComplete} columnMapping={columnMapping} />
         </div>
-      ) : usedLegends.length === 0 ? (
+      ) : Object.keys(usedLegends).length === 0 ? (
         <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <LegendSelection headers={headers} onComplete={handleLegendComplete} />
+          <LegendSelection headers={headers} onComplete={handleLegendComplete} columnMapping={columnMapping} />
         </div>
       ) : (
         <>
