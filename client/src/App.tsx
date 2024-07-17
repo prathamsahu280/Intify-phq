@@ -44,13 +44,12 @@ const App = () => {
 
   const handleMappingComplete = (mapping: Record<string, string>) => {
     setColumnMapping(mapping);
-    // You might want to store this mapping in a cookie as well
-    // Cookies.set('columnMapping', JSON.stringify(mapping), { expires: 30 });
+    Cookies.set('columnMapping', JSON.stringify(mapping), { expires: 30 });
   }
 
   const handleFilterComplete = (filters: { [key: string]: string }) => {
     setUsedFilters(filters);
-    // Cookies.set('usedFilters', JSON.stringify(filters), { expires: 30 });
+    Cookies.set('usedFilters', JSON.stringify(filters), { expires: 30 });
   }
 
   useEffect(() => {
@@ -68,21 +67,33 @@ const App = () => {
     }
   }, [spreadsheetId, selectedSheet]);
 
+  useEffect(() => {
+    const storedId = Cookies.get('spreadsheetId');
+    const storedSheet = Cookies.get('selectedSheet');
+    const storedMapping = Cookies.get('columnMapping');
+    const storedFilters = Cookies.get('usedFilters');
+  
+    if (storedId) setSpreadsheetId(storedId);
+    if (storedSheet) setSelectedSheet(storedSheet);
+    if (storedMapping) setColumnMapping(JSON.parse(storedMapping));
+    if (storedFilters) setUsedFilters(JSON.parse(storedFilters));
+  }, []);
+
   return (
     <main className='flex flex-col h-screen'>
-      {!spreadsheetId || !selectedSheet ? (
-        <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <ImportSpreadsheet setSpreadsheetId={setSpreadsheetId} setSelectedSheet={setSelectedSheet} />
-        </div>
-      ) : !columnMapping ? (
-        <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <ColumnMapping spreadsheetId={spreadsheetId} sheetName={selectedSheet} onMappingComplete={handleMappingComplete} />
-        </div>
-      ) : Object.keys(usedFilters).length === 0 ? (
-        <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <FilterSelection headers={headers} onComplete={handleFilterComplete} columnMapping={columnMapping} />
-        </div>
-      ) : (
+    {!spreadsheetId || !selectedSheet ? (
+      <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
+        <ImportSpreadsheet setSpreadsheetId={setSpreadsheetId} setSelectedSheet={setSelectedSheet} />
+      </div>
+    ) : !columnMapping ? (
+      <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
+        <ColumnMapping spreadsheetId={spreadsheetId} sheetName={selectedSheet} onMappingComplete={handleMappingComplete} />
+      </div>
+    ) : Object.keys(usedFilters).length === 0 ? (
+      <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
+        <FilterSelection headers={headers} onComplete={handleFilterComplete} columnMapping={columnMapping} />
+      </div>
+    ) : (
         <>
           <div className='absolute top-0 left-0 bg-white m-4 z-10 p-2 px-3 rounded-lg flex flex-col gap-y-2'>
             <div className='flex gap-x-2'>
