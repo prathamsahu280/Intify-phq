@@ -1,18 +1,28 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import Cookies from 'js-cookie';
 
 interface FilterSelectionProps {
   headers: string[];
   onComplete: (filters: { [key: string]: string }) => void;
   columnMapping: Record<string, string>;
+  setCurrentStep: (step: 'import' | 'mapping' | 'filters' | 'main') => void;
 }
 
-export const FilterSelection: React.FC<FilterSelectionProps> = ({ headers, onComplete, columnMapping }) => {
+export const FilterSelection: React.FC<FilterSelectionProps> = ({ headers, onComplete, columnMapping, setCurrentStep }) => {
   const [selectedFields, setSelectedFields] = useState<{ [key: string]: string }>({});
 
   const availableHeaders = useMemo(() => {
     const mappedColumns = Object.values(columnMapping);
     return headers.filter(header => !mappedColumns.includes(header));
   }, [headers, columnMapping]);
+
+  useEffect(() => {
+    // Load filters from cookies
+    const storedFilters = Cookies.get('usedFilters');
+    if (storedFilters) {
+      setSelectedFields(JSON.parse(storedFilters));
+    }
+  }, []);
 
   const handleFieldChange = (header: string) => {
     setSelectedFields(prev => {
@@ -37,8 +47,18 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({ headers, onCom
     onComplete(selectedFields);
   };
 
+  const handleGoBack = () => {
+    setCurrentStep('mapping');
+  };
+
   return (
     <div className="p-4">
+      <button
+        onClick={handleGoBack}
+        className="absolute top-4 left-4 p-2 px-4 bg-gray-500 text-white rounded"
+      >
+        Go Back
+      </button>
       <h2 className="text-2xl font-bold mb-4">Select Fields</h2>
       {availableHeaders.map(header => (
         <div key={`field-${header}`} className="flex items-center mb-2">
@@ -63,11 +83,11 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({ headers, onCom
         </div>
       ))}
       <button
-        onClick={handleConfirm}
-        className="mt-4 p-2 px-4 bg-blue-500 text-white rounded"
-      >
-        Confirm Fields
-      </button>
-    </div>
-  );
+       onClick={handleConfirm}
+       className="mt-4 p-2 px-4 bg-blue-500 text-white rounded"
+     >
+       Confirm Fields
+     </button>
+   </div>
+ );
 };

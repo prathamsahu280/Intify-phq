@@ -28,15 +28,25 @@ const App = () => {
   const [columnMapping, setColumnMapping] = useState<Record<string, string> | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
   const [usedFilters, setUsedFilters] = useState<{ [key: string]: string }>({});
+  const [currentStep, setCurrentStep] = useState<'import' | 'mapping' | 'filters' | 'main'>('import');
 
   useEffect(() => {
     const storedId = Cookies.get('spreadsheetId');
     const storedSheet = Cookies.get('selectedSheet');
-    if (storedId) {
-      setSpreadsheetId(storedId);
-    }
-    if (storedSheet) {
-      setSelectedSheet(storedSheet);
+    const storedMapping = Cookies.get('columnMapping');
+    const storedFilters = Cookies.get('usedFilters');
+  
+    if (storedId) setSpreadsheetId(storedId);
+    if (storedSheet) setSelectedSheet(storedSheet);
+    if (storedMapping) setColumnMapping(JSON.parse(storedMapping));
+    if (storedFilters) setUsedFilters(JSON.parse(storedFilters));
+
+    if (storedId && storedSheet && storedMapping && storedFilters) {
+      setCurrentStep('main');
+    } else if (storedId && storedSheet && storedMapping) {
+      setCurrentStep('filters');
+    } else if (storedId && storedSheet) {
+      setCurrentStep('mapping');
     }
   }, []); 
 
@@ -47,11 +57,13 @@ const App = () => {
   const handleMappingComplete = (mapping: Record<string, string>) => {
     setColumnMapping(mapping);
     Cookies.set('columnMapping', JSON.stringify(mapping), { expires: 30 });
+    setCurrentStep('filters');
   }
 
   const handleFilterComplete = (filters: { [key: string]: string }) => {
     setUsedFilters(filters);
     Cookies.set('usedFilters', JSON.stringify(filters), { expires: 30 });
+    setCurrentStep('main');
   }
 
   const handleReset = (type: 'all' | 'columnMapping' | 'filters') => {
@@ -65,21 +77,23 @@ const App = () => {
         setSelectedSheet('');
         setColumnMapping(null);
         setUsedFilters({});
+        setCurrentStep('import');
         break;
       case 'columnMapping':
         Cookies.remove('columnMapping');
         setColumnMapping(null);
+        setCurrentStep('mapping');
         break;
       case 'filters':
         Cookies.remove('usedFilters');
         setUsedFilters({});
+        setCurrentStep('filters');
         break;
     }
   };
 
   useEffect(() => {
     if (spreadsheetId && selectedSheet) {
-      // Fetch all headers from the selected sheet
       const fetchHeaders = async () => {
         try {
           const response = await axios.get(`http://localhost:5000/api/spreadsheet/headers?id=${spreadsheetId}&name=${selectedSheet}`);
@@ -91,18 +105,6 @@ const App = () => {
       fetchHeaders();
     }
   }, [spreadsheetId, selectedSheet]);
-
-  useEffect(() => {
-    const storedId = Cookies.get('spreadsheetId');
-    const storedSheet = Cookies.get('selectedSheet');
-    const storedMapping = Cookies.get('columnMapping');
-    const storedFilters = Cookies.get('usedFilters');
-  
-    if (storedId) setSpreadsheetId(storedId);
-    if (storedSheet) setSelectedSheet(storedSheet);
-    if (storedMapping) setColumnMapping(JSON.parse(storedMapping));
-    if (storedFilters) setUsedFilters(JSON.parse(storedFilters));
-  }, []);
 
   return (
     <main className='flex flex-col h-screen'>
@@ -125,19 +127,36 @@ const App = () => {
           Reset Filters
         </AlertDialogAction>
       </AlertDialog>
-    {!spreadsheetId || !selectedSheet ? (
-      <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-        <ImportSpreadsheet setSpreadsheetId={setSpreadsheetId} setSelectedSheet={setSelectedSheet} />
-      </div>
-    ) : !columnMapping ? (
-      <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-        <ColumnMapping spreadsheetId={spreadsheetId} sheetName={selectedSheet} onMappingComplete={handleMappingComplete} />
-      </div>
-    ) : Object.keys(usedFilters).length === 0 ? (
-      <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-        <FilterSelection headers={headers} onComplete={handleFilterComplete} columnMapping={columnMapping} />
-      </div>
-    ) : (
+      {currentStep === 'import' && (
+        <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
+          <ImportSpreadsheet 
+            setSpreadsheetId={setSpreadsheetId} 
+            setSelectedSheet={setSelectedSheet} 
+            setCurrentStep={setCurrentStep}
+          />
+        </div>
+      )}
+      {currentStep === 'mapping' && (
+        <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
+          <ColumnMapping 
+            spreadsheetId={spreadsheetId!} 
+            sheetName={selectedSheet} 
+            onMappingComplete={handleMappingComplete} 
+            setCurrentStep={setCurrentStep}
+          />
+        </div>
+      )}
+      {currentStep === 'filters' && (
+        <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
+          <FilterSelection 
+            headers={headers} 
+            onComplete={handleFilterComplete} 
+            columnMapping={columnMapping!} 
+            setCurrentStep={setCurrentStep}
+          />
+        </div>
+      )}
+      {currentStep === 'main' && (
         <>
           <div className='absolute top-0 left-0 bg-white m-4 z-10 p-2 px-3 rounded-lg flex flex-col gap-y-2'>
             <div className='flex gap-x-2'>
@@ -150,20 +169,20 @@ const App = () => {
             </div>
           </div>
           <XLS 
-  showLayer={showLayer} 
-  map={map} 
-  legend={legend} 
-  data={data} 
-  setData={setData} 
-  setXlsData={setXlsData} 
-  setkmlData={setkmlData} 
-  removeUnknown={removeUnknown} 
-  setRemoveUnknown={setRemoveUnknown} 
-  spreadsheetId={spreadsheetId}
-  sheetName={selectedSheet}
-  columnMapping={columnMapping}
-  usedFilters={usedFilters}
-/>
+            showLayer={showLayer} 
+            map={map} 
+            legend={legend} 
+            data={data} 
+            setData={setData} 
+            setXlsData={setXlsData} 
+            setkmlData={setkmlData} 
+            removeUnknown={removeUnknown} 
+            setRemoveUnknown={setRemoveUnknown} 
+            spreadsheetId={spreadsheetId!}
+            sheetName={selectedSheet}
+            columnMapping={columnMapping!}
+            usedFilters={usedFilters}
+          />
           <KmlGenerator kmlData={kmlData} legendName={legend} selectedFilters={selectedFilters} removeUnknown={removeUnknown} />
           <Map map={map} />
           <Filters data={data} legend={legend} setLegend={setLegend} xlsData={xlsData} setData={setData} selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} removeUnknown={removeUnknown}/>

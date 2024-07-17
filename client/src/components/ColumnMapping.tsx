@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 interface ColumnMappingProps {
   spreadsheetId: string;
   onMappingComplete: (mapping: Record<string, string>) => void;
   sheetName: string;
+  setCurrentStep: (step: 'import' | 'mapping' | 'filters' | 'main') => void;
 }
 
-export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onMappingComplete, sheetName }) => {
+export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onMappingComplete, sheetName, setCurrentStep }) => {
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({
     Date: '',
@@ -28,6 +30,12 @@ export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onM
     };
 
     fetchHeaders();
+
+    // Load mapping from cookies
+    const storedMapping = Cookies.get('columnMapping');
+    if (storedMapping) {
+      setMapping(JSON.parse(storedMapping));
+    }
   }, [spreadsheetId, sheetName]);
 
   const handleMappingChange = (field: string, value: string) => {
@@ -38,8 +46,18 @@ export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onM
     onMappingComplete(mapping);
   };
 
+  const handleGoBack = () => {
+    setCurrentStep('import');
+  };
+
   return (
     <div className="p-4">
+      <button
+        onClick={handleGoBack}
+        className="absolute top-4 left-4 p-2 px-4 bg-gray-500 text-white rounded"
+      >
+        Go Back
+      </button>
       <h2 className="text-2xl font-bold mb-4">Column Mapping</h2>
       <table className="w-full border-collapse border border-gray-300">
         <thead>

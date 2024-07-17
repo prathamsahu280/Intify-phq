@@ -5,9 +5,10 @@ import Cookies from 'js-cookie';
 interface ImportSpreadsheetProps {
   setSpreadsheetId: (id: string) => void;
   setSelectedSheet: (sheet: string) => void;
+  setCurrentStep: (step: 'import' | 'mapping' | 'filters' | 'main') => void;
 }
 
-export const ImportSpreadsheet: React.FC<ImportSpreadsheetProps> = ({ setSpreadsheetId, setSelectedSheet }) => {
+export const ImportSpreadsheet: React.FC<ImportSpreadsheetProps> = ({ setSpreadsheetId, setSelectedSheet, setCurrentStep }) => {
   const [url, setUrl] = useState('');
   const [sheets, setSheets] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,7 @@ export const ImportSpreadsheet: React.FC<ImportSpreadsheetProps> = ({ setSpreads
   const handleSheetSelect = (sheet: string) => {
     setSelectedSheet(sheet);
     Cookies.set('selectedSheet', sheet, { expires: 30 });
+    setCurrentStep('mapping');
   };
 
   return (
