@@ -11,6 +11,8 @@ import { ImportSpreadsheet } from './components/ImportSpreadsheet';
 import { ColumnMapping } from './components/ColumnMapping';
 import { FilterSelection } from './components/FilterSelection';
 import axios from 'axios';
+import { AlertDialog, AlertDialogAction } from "@/components/ui/AlertDialog";
+import { Button } from "@/components/ui/button";
 
 const App = () => {
   const map = useRef(null);
@@ -52,6 +54,29 @@ const App = () => {
     Cookies.set('usedFilters', JSON.stringify(filters), { expires: 30 });
   }
 
+  const handleReset = (type: 'all' | 'columnMapping' | 'filters') => {
+    switch (type) {
+      case 'all':
+        Cookies.remove('spreadsheetId');
+        Cookies.remove('selectedSheet');
+        Cookies.remove('columnMapping');
+        Cookies.remove('usedFilters');
+        setSpreadsheetId(null);
+        setSelectedSheet('');
+        setColumnMapping(null);
+        setUsedFilters({});
+        break;
+      case 'columnMapping':
+        Cookies.remove('columnMapping');
+        setColumnMapping(null);
+        break;
+      case 'filters':
+        Cookies.remove('usedFilters');
+        setUsedFilters({});
+        break;
+    }
+  };
+
   useEffect(() => {
     if (spreadsheetId && selectedSheet) {
       // Fetch all headers from the selected sheet
@@ -81,6 +106,25 @@ const App = () => {
 
   return (
     <main className='flex flex-col h-screen'>
+      <AlertDialog
+        trigger={
+          <Button variant="outline" className="absolute top-28 right-4 z-10">
+            Reset
+          </Button>
+        }
+        title="Reset Options"
+        description="Choose what you want to reset:"
+      >
+        <AlertDialogAction onClick={() => handleReset('all')}>
+          Reset Completely
+        </AlertDialogAction>
+        <AlertDialogAction onClick={() => handleReset('columnMapping')}>
+          Reset Column Mapping
+        </AlertDialogAction>
+        <AlertDialogAction onClick={() => handleReset('filters')}>
+          Reset Filters
+        </AlertDialogAction>
+      </AlertDialog>
     {!spreadsheetId || !selectedSheet ? (
       <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
         <ImportSpreadsheet setSpreadsheetId={setSpreadsheetId} setSelectedSheet={setSelectedSheet} />

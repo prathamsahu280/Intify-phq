@@ -92,39 +92,32 @@ export const XLS = ({
     // Function of creating markers with specific colors generated
     const createMarkers = () => {
       setkmlData((_) => []);
-      // Create an empty mapboxgl bounds object
       const bounds = new mapboxgl.LngLatBounds();
 
-      // Loop through each coordinate in the array
       filteredData.forEach((el) => {
-        // Create a marker for each coordinate
         if (el.GR && el.GR.length > 0) {
           const coordinates = convertGRToDecimal(el.GR) as [number, number];
-          // Extend the bounds to include each coordinate
           if (!isNaN(coordinates[0]) && !isNaN(coordinates[1])) {
             const markerElement = document.createElement("div");
             markerElement.className = "marker";
 
-            // Create marker icon
             const markerIcon = document.createElement("div");
             markerIcon.className = "marker-icon";
             markerElement.appendChild(markerIcon);
             markerIcon.style.backgroundRepeat = "no-repeat";
 
-            // Create marker info
             const markerInfo = document.createElement("div");
-
             markerInfo.className = "marker-info";
             markerInfo.innerHTML = `<h3>${el[legend as keyof xlsDataType] || ''}</h3>`;
-
-            // Generating specific colors according to Name_ field
             markerInfo.style.backgroundColor = stringToColor(el.Name_ || '');
-
             markerElement.appendChild(markerInfo);
+            
+            const uniqueId = el['UniqueId'];
+            const content = el['Content'];
 
-            // Creating popup
+            // Updated popup content with fallback text
             const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-              `<h3>${el["IntUniqueNo" as keyof xlsDataType] || ''}: ${el["IntContent" as keyof xlsDataType] || ''} </h3>`,
+              `<h3>${uniqueId}: ${content}</h3>`
             );
 
             const marker = new mapboxgl.Marker({
@@ -135,11 +128,8 @@ export const XLS = ({
               .addTo(map.current);
 
             markers.push(marker);
-
-            // Extend the bounds to include each coordinate
             bounds.extend(coordinates);
 
-            // Generating kml according to the filtered or initial data
             const newKmlData = {
               name: el[legend as keyof xlsDataType] || '',
               longitude: coordinates[0],
@@ -150,7 +140,6 @@ export const XLS = ({
         }
       });
 
-      // Fit the map to the bounds
       if (!bounds.isEmpty()) {
         map.current.fitBounds(bounds, { padding: 50 });
       }
@@ -166,7 +155,7 @@ export const XLS = ({
         marker.remove();
       });
     };
-  }, [filteredData, legend, showLayer.marker, map]);
+  }, [filteredData, legend, showLayer.marker, map,columnMapping]);
 
   return (
     <>

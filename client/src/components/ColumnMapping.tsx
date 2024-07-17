@@ -7,12 +7,14 @@ interface ColumnMappingProps {
   sheetName: string;
 }
 
-export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onMappingComplete ,sheetName}) => {
+export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onMappingComplete, sheetName }) => {
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({
     Date: '',
     GR: '',
-    Name: ''
+    Name: '',
+    Content: '',
+    UniqueId: ''
   });
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onM
     };
 
     fetchHeaders();
-  }, [spreadsheetId]);
+  }, [spreadsheetId, sheetName]);
 
   const handleMappingChange = (field: string, value: string) => {
     setMapping(prev => ({ ...prev, [field]: value }));
