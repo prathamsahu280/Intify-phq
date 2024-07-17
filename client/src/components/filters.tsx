@@ -109,53 +109,15 @@ export const Filters = ({
 
   const handleLabels = (label: string, checked: boolean) => {
     setSelectedFilters((prevFilters) => {
-      // Type assertion to treat prevFilters as xlsDataType
-      const filters = prevFilters as xlsDataType;
-
       if (checked) {
-        // If the checkbox is checked, add the label to the filters
-        switch (label) {
-          case "Name":
-          case "Name_":
-          case "AreaCommittee":
-          case "District":
-          case "Division":
-          case "GR":
-          case "Rank":
-          case "Source":
-          case "IntContent":
-          case "PoliceStation":
-          case "Type":
-            return {
-              ...filters,
-              [label]: "",
-            };
-          case "Date":
-            return {
-              ...filters,
-              [label]: null,
-            };
-          case "startDate":
-          case "endDate":
-            return {
-              ...prevFilters,
-              [label]: null,
-            };
-          case "Month":
-          case "Strength":
-          case "IntUniqueNo":
-          case "Week":
-            return {
-              ...filters,
-              [label]: 0,
-            };
-          default:
-            console.log("Unhandled Property Error");
-            throw new Error("Unhandled property name");
-        }
+        // Add the new filter
+        return {
+          ...prevFilters,
+          [label]: "", // Initialize with an empty string for all types
+        };
       } else {
-        // If the checkbox is unchecked, remove the label from the filters
-        const { [label]: omitted, ...rest } = filters as Record<string, any>;
+        // Remove the filter
+        const { [label]: omitted, ...rest } = prevFilters;
         return rest;
       }
     });
@@ -169,36 +131,20 @@ export const Filters = ({
     return false;
   };
 
-  const handleChange = (value: string | Date, selected: string) => {
-    setSelectedFilters((prev) => {
-      if (selected === "startDate" || selected === "endDate") {
-        return { ...prev, [selected]: value as Date };
-      }
-      return { ...prev, [selected]: value };
-    });
+  const handleChange = (value: string, selected: string) => {
+    setSelectedFilters((prev) => ({
+      ...prev,
+      [selected]: value,
+    }));
   };
 
   const getSuggestions = (selected: string) => {
     const uniqueValues = Array.from(
-      new Set(xlsData.map((item) => item[selected as keyof xlsDataType])),
+      new Set(xlsData.map((item) => item[selected as keyof typeof item]))
     );
-    const isNumericField = [
-      "Month",
-      "Strength",
-      "IntUniqueNo",
-      "Week",
-    ].includes(selected);
-    const filteredValues = removeUnknown
-      ? uniqueValues.filter(
-          ((value) => value !== null && value !== "Unknown") ||
-            ((value) => value !== null && value !== "ukn"),
-        )
-      : uniqueValues.filter((value) => value !== null);
-
-    return isNumericField
-      ? filteredValues.map((value) => (value !== null ? value.toString() : ""))
-      : filteredValues.map((value) =>
-          value !== null ? String(value).toLowerCase() : "");
+    return uniqueValues
+      .filter((value) => value != null && (!removeUnknown || (value !== "Unknown" && value !== "ukn")))
+      .map(String);
   };
 
   return (
@@ -301,37 +247,14 @@ export const Filters = ({
         {selectedFilters ? (
           Object.keys(selectedFilters).map((selected) => (
             <div key={selected} className="flex flex-col gap-y-2">
-              {selected === "startDate" || selected === "endDate" ? (
-                <>
-                  <label htmlFor={selected} className="text-sm font-medium">
-                    {selected === "startDate" ? "Start Date" : "End Date"}
-                  </label>
-                  <input
-                    type="date"
-                    id={selected}
-                    value={
-                      selectedFilters[
-                        selected as keyof typeof selectedFilters
-                      ]?.toString() || ""
-                    }
-                    onChange={(e) => handleChange(e.target.value, selected)}
-                    className="border border-gray-300 rounded-md px-3 py-2"
-                  />
-                </>
-              ) :  (
-                <AutocompleteInput
-                  id={selected}
-                  label={SpacedNamed(selected)}
-                  value={
-                    selectedFilters[
-                      selected as keyof typeof selectedFilters
-                    ]?.toString() || ""
-                  }
-                  onChange={(value) => handleChange(value, selected)}
-                  suggestions={getSuggestions(selected)}
-                  colorize={selected === "Name_"} // Pass colorize prop for Name and Name_
-                />
-              )}
+              <AutocompleteInput
+                id={selected}
+                label={SpacedNamed(selected)}
+                value={selectedFilters[selected]?.toString() || ""}
+                onChange={(value) => handleChange(value, selected)}
+                suggestions={getSuggestions(selected)}
+                colorize={selected === "Name_"}
+              />
             </div>
           ))
         ) : (

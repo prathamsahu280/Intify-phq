@@ -16,7 +16,9 @@ export const XLS = ({
   removeUnknown,
   setRemoveUnknown,
   spreadsheetId,
-  sheetName
+  sheetName,
+  columnMapping,
+  usedFilters
 }: XLSProps) => {
   const [filteredData, setFilteredData] = useState<xlsDataType[]>([]);
 
@@ -26,36 +28,46 @@ export const XLS = ({
         const res = await axios.get(
           `http://localhost:5000/api/spreadsheet?id=${spreadsheetId}&name=${sheetName}`,
         );
-      const rows = res.data;
-      rows.shift();
-      const processedData = rows.map((row:any) => ({
-        Date: row[0],
-        IntContent: row[2],
-        Name: row[4],
-        Name_: row[3],
-        IntUniqueNo: parseInt(row[1]),
-        GR: row[5],
-        Strength: parseInt(row[8]),
-        Source: row[10],
-        Type: row[11],
-        Rank: row[12],
-        AreaCommittee: row[13],
-        District: row[14],
-        PoliceStation: row[15],
-        Division: row[17],
-        Week: parseInt(row[18]),
-        Month: parseInt(row[19]),
-      }));
-      setFilteredData(processedData);
-      setData(processedData);
-      setXlsData(processedData);
-    } catch (error) {
-      console.error("Error fetching spreadsheet data:", error);
-    }
-    };
-    showLayer.marker && fetchData();
-  }, [showLayer.marker, spreadsheetId]);
+        const rows = res.data;
+        const headers = rows.shift(); // Remove and store header row
 
+        const processedData = rows.map((row: any) => {
+          const processedRow: any = {};
+
+          // Handle column mapping
+          Object.entries(columnMapping || {}).forEach(([key, value]) => {
+            const index = headers.indexOf(value);
+            if (index !== -1) {
+              processedRow[key] = row[index];
+            }
+          });
+
+          // Handle selected fields
+          Object.entries(usedFilters).forEach(([key, type]) => {
+            const index = headers.indexOf(key);
+            if (index !== -1) {
+              if (type === 'Numbers') {
+                processedRow[key] = parseInt(row[index], 10) || 0; // Use 0 if parsing fails
+              } else {
+                processedRow[key] = row[index];
+              }
+            }
+          });
+
+          return processedRow;
+        });
+
+        setFilteredData(processedData);
+        setData(processedData);
+        setXlsData(processedData);
+      } catch (error) {
+        console.error("Error fetching spreadsheet data:", error);
+      }
+    };
+    if (showLayer.marker && spreadsheetId && sheetName) {
+      fetchData();
+    }
+  }, [showLayer.marker, spreadsheetId, sheetName, columnMapping, usedFilters]);
 
   useEffect(() => {
     const updateFilteredData = () => {
@@ -103,16 +115,16 @@ export const XLS = ({
             const markerInfo = document.createElement("div");
 
             markerInfo.className = "marker-info";
-            markerInfo.innerHTML = `<h3>${el[legend as keyof xlsDataType]}</h3>`;
+            markerInfo.innerHTML = `<h3>${el[legend as keyof xlsDataType] || ''}</h3>`;
 
             // Generating specific colors according to Name_ field
-            markerInfo.style.backgroundColor = stringToColor(el.Name_);
+            markerInfo.style.backgroundColor = stringToColor(el.Name_ || '');
 
             markerElement.appendChild(markerInfo);
 
             // Creating popup
             const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-              `<h3>${el["IntUniqueNo" as keyof xlsDataType]}: ${el["IntContent" as keyof xlsDataType]} </h3>`,
+              `<h3>${el["IntUniqueNo" as keyof xlsDataType] || ''}: ${el["IntContent" as keyof xlsDataType] || ''} </h3>`,
             );
 
             const marker = new mapboxgl.Marker({
@@ -127,9 +139,9 @@ export const XLS = ({
             // Extend the bounds to include each coordinate
             bounds.extend(coordinates);
 
-            // Generating kml according to the filterd or initial data
+            // Generating kml according to the filtered or initial data
             const newKmlData = {
-              name: el[legend as keyof xlsDataType],
+              name: el[legend as keyof xlsDataType] || '',
               longitude: coordinates[0],
               latitude: coordinates[1],
             } as kmlDataType;
@@ -139,10 +151,12 @@ export const XLS = ({
       });
 
       // Fit the map to the bounds
-      map.current.fitBounds(bounds, { padding: 50 });
+      if (!bounds.isEmpty()) {
+        map.current.fitBounds(bounds, { padding: 50 });
+      }
     };
 
-    if (filteredData.length !== 0 && showLayer.marker) {
+    if (filteredData.length !== 0 && showLayer.marker && map.current) {
       createMarkers();
     }
 
@@ -152,7 +166,7 @@ export const XLS = ({
         marker.remove();
       });
     };
-  }, [filteredData, legend, showLayer.marker]);
+  }, [filteredData, legend, showLayer.marker, map]);
 
   return (
     <>

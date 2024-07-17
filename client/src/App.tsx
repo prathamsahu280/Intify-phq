@@ -10,7 +10,6 @@ import { RouteManager } from './components/RouteManager';
 import { ImportSpreadsheet } from './components/ImportSpreadsheet';
 import { ColumnMapping } from './components/ColumnMapping';
 import { FilterSelection } from './components/FilterSelection';
-import { LegendSelection } from './components/LegendSelection';
 import axios from 'axios';
 
 const App = () => {
@@ -27,7 +26,6 @@ const App = () => {
   const [columnMapping, setColumnMapping] = useState<Record<string, string> | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
   const [usedFilters, setUsedFilters] = useState<{ [key: string]: string }>({});
-  const [usedLegends, setUsedLegends] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     const storedId = Cookies.get('spreadsheetId');
@@ -53,11 +51,6 @@ const App = () => {
   const handleFilterComplete = (filters: { [key: string]: string }) => {
     setUsedFilters(filters);
     // Cookies.set('usedFilters', JSON.stringify(filters), { expires: 30 });
-  }
-
-  const handleLegendComplete = (legends: { [key: string]: string }) => {
-    setUsedLegends(legends);
-    // Cookies.set('usedLegends', JSON.stringify(legends), { expires: 30 });
   }
 
   useEffect(() => {
@@ -89,10 +82,6 @@ const App = () => {
         <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
           <FilterSelection headers={headers} onComplete={handleFilterComplete} columnMapping={columnMapping} />
         </div>
-      ) : Object.keys(usedLegends).length === 0 ? (
-        <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <LegendSelection headers={headers} onComplete={handleLegendComplete} columnMapping={columnMapping} />
-        </div>
       ) : (
         <>
           <div className='absolute top-0 left-0 bg-white m-4 z-10 p-2 px-3 rounded-lg flex flex-col gap-y-2'>
@@ -106,22 +95,23 @@ const App = () => {
             </div>
           </div>
           <XLS 
-            showLayer={showLayer} 
-            map={map} 
-            legend={legend} 
-            data={data} 
-            setData={setData} 
-            setXlsData={setXlsData} 
-            setkmlData={setkmlData} 
-            removeUnknown={removeUnknown} 
-            setRemoveUnknown={setRemoveUnknown} 
-            spreadsheetId={spreadsheetId}
-            sheetName={selectedSheet}
-            columnMapping={columnMapping}
-          />
+  showLayer={showLayer} 
+  map={map} 
+  legend={legend} 
+  data={data} 
+  setData={setData} 
+  setXlsData={setXlsData} 
+  setkmlData={setkmlData} 
+  removeUnknown={removeUnknown} 
+  setRemoveUnknown={setRemoveUnknown} 
+  spreadsheetId={spreadsheetId}
+  sheetName={selectedSheet}
+  columnMapping={columnMapping}
+  usedFilters={usedFilters}
+/>
           <KmlGenerator kmlData={kmlData} legendName={legend} selectedFilters={selectedFilters} removeUnknown={removeUnknown} />
           <Map map={map} />
-          <Filters data={data} legend={legend} setLegend={setLegend} xlsData={xlsData} setData={setData} selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} removeUnknown={removeUnknown} />
+          <Filters data={data} legend={legend} setLegend={setLegend} xlsData={xlsData} setData={setData} selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} removeUnknown={removeUnknown}/>
           <Layer showLayer={showLayer} map={map} />
           <Toaster position='top-center' />
           <RouteManager data={data} map={map} />

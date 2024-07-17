@@ -41,7 +41,7 @@ interface FiltersProps {
     removeUnknown: boolean;
   }
 
-interface XLSProps {
+  interface XLSProps {
     legend: string;
     data: xlsDataType[];
     showLayer: showLayerType;
@@ -51,9 +51,10 @@ interface XLSProps {
     map: any;
     removeUnknown: boolean;
     setRemoveUnknown: (value: boolean) => void;
-    spreadsheetId:  useState<string | null>;
-    columnMapping: useState<Record<string, string> | null>;
-    sheetName: useState<string>;
+    spreadsheetId: string | null;
+    sheetName: string;
+    columnMapping: Record<string, string> | null;
+    usedFilters: { [key: string]: string };
 };
 interface LayerProps {
     showLayer: showLayerType;

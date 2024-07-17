@@ -7,52 +7,52 @@ interface FilterSelectionProps {
 }
 
 export const FilterSelection: React.FC<FilterSelectionProps> = ({ headers, onComplete, columnMapping }) => {
-  const [usedFilters, setUsedFilters] = useState<{ [key: string]: string }>({});
+  const [selectedFields, setSelectedFields] = useState<{ [key: string]: string }>({});
 
   const availableHeaders = useMemo(() => {
     const mappedColumns = Object.values(columnMapping);
     return headers.filter(header => !mappedColumns.includes(header));
   }, [headers, columnMapping]);
 
-  const handleFilterChange = (header: string) => {
-    setUsedFilters(prev => {
-      const newFilters = { ...prev };
-      if (header in newFilters) {
-        delete newFilters[header];
+  const handleFieldChange = (header: string) => {
+    setSelectedFields(prev => {
+      const newFields = { ...prev };
+      if (header in newFields) {
+        delete newFields[header];
       } else {
-        newFilters[header] = 'Text'; // Default to 'Text'
+        newFields[header] = 'Text'; // Default to 'Text'
       }
-      return newFilters;
+      return newFields;
     });
   };
 
   const handleTypeChange = (header: string, type: string) => {
-    setUsedFilters(prev => ({
+    setSelectedFields(prev => ({
       ...prev,
       [header]: type
     }));
   };
 
   const handleConfirm = () => {
-    onComplete(usedFilters);
+    onComplete(selectedFields);
   };
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Select Filters</h2>
+      <h2 className="text-2xl font-bold mb-4">Select Fields</h2>
       {availableHeaders.map(header => (
-        <div key={`filter-${header}`} className="flex items-center mb-2">
+        <div key={`field-${header}`} className="flex items-center mb-2">
           <input
             type="checkbox"
-            id={`filter-${header}`}
-            checked={header in usedFilters}
-            onChange={() => handleFilterChange(header)}
+            id={`field-${header}`}
+            checked={header in selectedFields}
+            onChange={() => handleFieldChange(header)}
             className="mr-2"
           />
-          <label htmlFor={`filter-${header}`} className="mr-2">{header}</label>
-          {header in usedFilters && (
+          <label htmlFor={`field-${header}`} className="mr-2">{header}</label>
+          {header in selectedFields && (
             <select
-              value={usedFilters[header]}
+              value={selectedFields[header]}
               onChange={(e) => handleTypeChange(header, e.target.value)}
               className="p-1 border rounded"
             >
@@ -66,7 +66,7 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({ headers, onCom
         onClick={handleConfirm}
         className="mt-4 p-2 px-4 bg-blue-500 text-white rounded"
       >
-        Confirm Filters
+        Confirm Fields
       </button>
     </div>
   );
