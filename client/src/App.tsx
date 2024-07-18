@@ -11,8 +11,15 @@ import { ImportSpreadsheet } from './components/ImportSpreadsheet';
 import { ColumnMapping } from './components/ColumnMapping';
 import { FilterSelection } from './components/FilterSelection';
 import axios from 'axios';
-import { AlertDialog, AlertDialogAction } from "@/components/ui/AlertDialog";
-import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { AlertDialogCancel, AlertDialogTitle } from '@radix-ui/react-alert-dialog';
 
 const App = () => {
   const map = useRef(null);
@@ -36,7 +43,7 @@ const App = () => {
     const storedSheet = Cookies.get('selectedSheet');
     const storedMapping = Cookies.get('columnMapping');
     const storedFilters = Cookies.get('usedFilters');
-  
+
     if (storedId) setSpreadsheetId(storedId);
     if (storedSheet) setSelectedSheet(storedSheet);
     if (storedMapping) setColumnMapping(JSON.parse(storedMapping));
@@ -49,7 +56,7 @@ const App = () => {
     } else if (storedId && storedSheet) {
       setCurrentStep('mapping');
     }
-  }, []); 
+  }, []);
 
   const handleChange = (type: keyof showLayerType) => {
     setShowLayer(prev => ({ ...prev, [type]: !prev[type] }))
@@ -117,29 +124,30 @@ const App = () => {
   return (
     <main className='flex flex-col h-screen'>
       <AlertDialog
-        trigger={
-          <Button variant="outline" className="absolute top-28 right-4 z-10">
-            Reset
-          </Button>
-        }
-        title="Reset Options"
-        description="Choose what you want to reset:"
       >
-        <AlertDialogAction onClick={() => handleReset('all')}>
-          Reset Completely
-        </AlertDialogAction>
-        <AlertDialogAction onClick={() => handleReset('columnMapping')}>
-          Reset Column Mapping
-        </AlertDialogAction>
-        <AlertDialogAction onClick={() => handleReset('filters')}>
-          Reset Filters
-        </AlertDialogAction>
+        <AlertDialogTrigger className='absolute top-28 right-4 z-10 bg-red-500 text-white p-2 px-4 rounded-md'>Reset</AlertDialogTrigger>
+        <AlertDialogContent className='gap-y-0'>
+          <AlertDialogTitle className='text-3xl font-semibold'>Reset Options</AlertDialogTitle>
+          <AlertDialogDescription className='text-base'>Choose what you want to reset:</AlertDialogDescription>
+          <div className='grid grid-cols-2 gap-2 mt-4'>
+            <AlertDialogAction className='bg-blue-500 hover:bg-blue-600' onClick={() => handleReset('filters')}>
+              Reset Filters
+            </AlertDialogAction>
+            <AlertDialogAction className='bg-blue-500 hover:bg-blue-600' onClick={() => handleReset('columnMapping')}>
+              Reset Column Mapping
+            </AlertDialogAction>
+            <AlertDialogAction className='bg-red-500 hover:bg-red-600' onClick={() => handleReset('all')}>
+              Reset Completely
+            </AlertDialogAction>
+            <AlertDialogCancel className='bg-slate-200 hover:bg-slate-300 text-sm rounded-md'>Cancel</AlertDialogCancel>
+          </div>
+        </AlertDialogContent>
       </AlertDialog>
       {currentStep === 'import' && (
         <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <ImportSpreadsheet 
-            setSpreadsheetId={setSpreadsheetId} 
-            setSelectedSheet={setSelectedSheet} 
+          <ImportSpreadsheet
+            setSpreadsheetId={setSpreadsheetId}
+            setSelectedSheet={setSelectedSheet}
             setCurrentStep={setCurrentStep}
             setFileType={setFileType}
           />
@@ -147,20 +155,20 @@ const App = () => {
       )}
       {currentStep === 'mapping' && (
         <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <ColumnMapping 
-            spreadsheetId={spreadsheetId!} 
-            sheetName={selectedSheet} 
-            onMappingComplete={handleMappingComplete} 
+          <ColumnMapping
+            spreadsheetId={spreadsheetId!}
+            sheetName={selectedSheet}
+            onMappingComplete={handleMappingComplete}
             setCurrentStep={setCurrentStep}
           />
         </div>
       )}
       {currentStep === 'filters' && (
         <div className='absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-white z-50'>
-          <FilterSelection 
-            headers={headers} 
-            onComplete={handleFilterComplete} 
-            columnMapping={columnMapping!} 
+          <FilterSelection
+            headers={headers}
+            onComplete={handleFilterComplete}
+            columnMapping={columnMapping!}
             setCurrentStep={setCurrentStep}
           />
         </div>
@@ -177,16 +185,16 @@ const App = () => {
               <label htmlFor="enable-border" className='text-sm'>Borders</label>
             </div>
           </div>
-          <XLS 
-            showLayer={showLayer} 
-            map={map} 
-            legend={legend} 
-            data={data} 
-            setData={setData} 
-            setXlsData={setXlsData} 
-            setkmlData={setkmlData} 
-            removeUnknown={removeUnknown} 
-            setRemoveUnknown={setRemoveUnknown} 
+          <XLS
+            showLayer={showLayer}
+            map={map}
+            legend={legend}
+            data={data}
+            setData={setData}
+            setXlsData={setXlsData}
+            setkmlData={setkmlData}
+            removeUnknown={removeUnknown}
+            setRemoveUnknown={setRemoveUnknown}
             spreadsheetId={spreadsheetId!}
             sheetName={selectedSheet}
             columnMapping={columnMapping!}
@@ -194,7 +202,7 @@ const App = () => {
           />
           <KmlGenerator kmlData={kmlData} legendName={legend} selectedFilters={selectedFilters} removeUnknown={removeUnknown} />
           <Map map={map} />
-          <Filters data={data} legend={legend} setLegend={setLegend} xlsData={xlsData} setData={setData} selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} removeUnknown={removeUnknown}/>
+          <Filters data={data} legend={legend} setLegend={setLegend} xlsData={xlsData} setData={setData} selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} removeUnknown={removeUnknown} />
           <Layer showLayer={showLayer} map={map} />
           <Toaster position='top-center' />
           <RouteManager data={data} map={map} />
