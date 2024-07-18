@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
+import xlsx from 'xlsx';
+import path from 'path';
 
 dotenv.config();
 
@@ -168,3 +170,50 @@ export const getSpreadsheetSheets = async (req: Request, res: Response) => {
         res.status(500).send(err.message || "Error occurred while fetching spreadsheet sheets");
     }
 };
+
+export const uploadExcelFile = (req: Request, res: Response) => {
+    if (!req.file) {
+      return res.status(400).send('No file uploaded.');
+    }
+  
+    const filePath = req.file.path;
+    const workbook = xlsx.readFile(filePath);
+    const sheets = workbook.SheetNames;
+  
+    res.status(200).json({ filePath, sheets });
+  };
+  
+  export const getExcelHeaders = (req: Request, res: Response) => {
+    const filePath = decodeURIComponent(req.query.filePath as string);
+    const sheetName = decodeURIComponent(req.query.sheetName as string);
+  
+    if (!filePath || !sheetName) {
+      return res.status(400).send('File path and sheet name are required');
+    }
+  
+    try {
+      const workbook = xlsx.readFile(filePath);
+      const worksheet = workbook.Sheets[sheetName];
+      const headers = xlsx.utils.sheet_to_json(worksheet, { header: 1 })[0];
+  
+      res.status(200).json(headers);
+    } catch (error) {
+      console.error('Error reading Excel file:', error);
+      res.status(500).send('Error reading Excel file');
+    }
+  };
+  
+  export const getExcelData = (req: Request, res: Response) => {
+    const filePath = req.query.filePath as string;
+    const sheetName = req.query.sheetName as string;
+  
+    if (!filePath || !sheetName) {
+      return res.status(400).send('File path and sheet name are required');
+    }
+  
+    const workbook = xlsx.readFile(filePath);
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+  
+    res.status(200).json(data);
+  };

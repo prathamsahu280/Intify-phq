@@ -29,6 +29,7 @@ const App = () => {
   const [headers, setHeaders] = useState<string[]>([]);
   const [usedFilters, setUsedFilters] = useState<{ [key: string]: string }>({});
   const [currentStep, setCurrentStep] = useState<'import' | 'mapping' | 'filters' | 'main'>('import');
+  const [fileType, setFileType] = useState<'spreadsheet' | 'excel' | null>(null);
 
   useEffect(() => {
     const storedId = Cookies.get('spreadsheetId');
@@ -106,6 +107,13 @@ const App = () => {
     }
   }, [spreadsheetId, selectedSheet]);
 
+  useEffect(() => {
+    const storedFileType = Cookies.get('fileType') as 'spreadsheet' | 'excel' | null;
+    if (storedFileType) {
+      setFileType(storedFileType);
+    }
+  }, []);
+
   return (
     <main className='flex flex-col h-screen'>
       <AlertDialog
@@ -133,6 +141,7 @@ const App = () => {
             setSpreadsheetId={setSpreadsheetId} 
             setSelectedSheet={setSelectedSheet} 
             setCurrentStep={setCurrentStep}
+            setFileType={setFileType}
           />
         </div>
       )}

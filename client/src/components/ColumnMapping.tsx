@@ -20,10 +20,20 @@ export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onM
   });
   const [error, setError] = useState<string | null>(null);
 
+  const fileType = Cookies.get('fileType');
+  const excelFilePath = Cookies.get('excelFilePath');
+
   useEffect(() => {
     const fetchHeaders = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/spreadsheet/headers?id=${spreadsheetId}&name=${sheetName}`);
+        let response;
+        if (fileType === 'spreadsheet') {
+          response = await axios.get(`http://localhost:5000/api/spreadsheet/headers?id=${spreadsheetId}&name=${sheetName}`);
+        } else if (fileType === 'excel' && excelFilePath) {
+          response = await axios.get(`http://localhost:5000/api/excel/headers?filePath=${encodeURIComponent(excelFilePath)}&sheetName=${encodeURIComponent(sheetName)}`);
+        } else {
+          throw new Error('Invalid file type or missing file path');
+        }
         setHeaders(response.data);
       } catch (error) {
         console.error('Error fetching headers:', error);
@@ -31,14 +41,16 @@ export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onM
       }
     };
 
-    fetchHeaders();
+    if (sheetName) {
+      fetchHeaders();
+    }
 
     // Load mapping from cookies
     const storedMapping = Cookies.get('columnMapping');
     if (storedMapping) {
       setMapping(JSON.parse(storedMapping));
     }
-  }, [spreadsheetId, sheetName]);
+  }, [spreadsheetId, sheetName, fileType, excelFilePath]);
 
   const handleMappingChange = (field: string, value: string) => {
     setMapping(prev => ({ ...prev, [field]: value }));
