@@ -101,7 +101,7 @@ export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onM
           className="w-full p-1"
         >
           <option value="">Select a column</option>
-          {headers.map((header, index) => (
+          {headers.map((header, index) => header && header.length >1 && (
             <option key={`${header}-${index}`} value={header}>
               {header}
             </option>

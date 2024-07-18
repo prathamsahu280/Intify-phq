@@ -87,7 +87,7 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({
       {headers.length === 0 ? (
         <p>No additional fields available for filtering.</p>
       ) : (
-        headers.map(header => (
+        headers.map(header => header && header.length >1 && (
           <div key={`field-${header}`} className="flex items-center mb-2">
             <input
               type="checkbox"
