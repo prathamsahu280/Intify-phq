@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import axios from "axios";
+import Cookies from 'js-cookie';
 import { stringToColor } from "@/lib/utils";
 import { convertGRToDecimal } from "@/utils/conversion";
-import { handleFile } from "@/utils/file-reader";
 
 export const XLS = ({
   showLayer,
@@ -21,13 +21,25 @@ export const XLS = ({
   usedFilters
 }: XLSProps) => {
   const [filteredData, setFilteredData] = useState<xlsDataType[]>([]);
+  const fileType = Cookies.get('fileType');
+  const excelFilePath = Cookies.get('excelFilePath');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5000/api/spreadsheet?id=${spreadsheetId}&name=${sheetName}`,
-        );
+        let res;
+        if (fileType === 'spreadsheet') {
+          res = await axios.get(
+            `http://localhost:5000/api/spreadsheet?id=${spreadsheetId}&name=${sheetName}`,
+          );
+        } else if (fileType === 'excel') {
+          res = await axios.get(
+            `http://localhost:5000/api/excel/data?filePath=${encodeURIComponent(excelFilePath || '')}&sheetName=${encodeURIComponent(sheetName)}`,
+          );
+        } else {
+          throw new Error('Invalid file type');
+        }
+
         const rows = res.data;
         const headers = rows.shift(); // Remove and store header row
 
@@ -61,13 +73,13 @@ export const XLS = ({
         setData(processedData);
         setXlsData(processedData);
       } catch (error) {
-        console.error("Error fetching spreadsheet data:", error);
+        console.error("Error fetching data:", error);
       }
     };
-    if (showLayer.marker && spreadsheetId && sheetName) {
+    if (showLayer.marker && ((fileType === 'spreadsheet' && spreadsheetId) || (fileType === 'excel' && excelFilePath)) && sheetName) {
       fetchData();
     }
-  }, [showLayer.marker, spreadsheetId, sheetName, columnMapping, usedFilters]);
+  }, [showLayer.marker, spreadsheetId, excelFilePath, sheetName, columnMapping, usedFilters, fileType]);
 
   useEffect(() => {
     const updateFilteredData = () => {

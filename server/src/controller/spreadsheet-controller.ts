@@ -204,16 +204,21 @@ export const uploadExcelFile = (req: Request, res: Response) => {
   };
   
   export const getExcelData = (req: Request, res: Response) => {
-    const filePath = req.query.filePath as string;
-    const sheetName = req.query.sheetName as string;
+    const filePath = decodeURIComponent(req.query.filePath as string);
+    const sheetName = decodeURIComponent(req.query.sheetName as string);
   
     if (!filePath || !sheetName) {
       return res.status(400).send('File path and sheet name are required');
     }
   
-    const workbook = xlsx.readFile(filePath);
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    try {
+      const workbook = xlsx.readFile(filePath);
+      const worksheet = workbook.Sheets[sheetName];
+      const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
   
-    res.status(200).json(data);
+      res.status(200).json(data);
+    } catch (error) {
+      console.error('Error reading Excel file:', error);
+      res.status(500).send('Error reading Excel file');
+    }
   };

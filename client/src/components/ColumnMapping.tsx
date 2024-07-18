@@ -91,26 +91,26 @@ export const ColumnMapping: React.FC<ColumnMappingProps> = ({ spreadsheetId, onM
           </tr>
         </thead>
         <tbody>
-          {Object.keys(mapping).map((field) => (
-            <tr key={field}>
-              <td className="border border-gray-300 p-2">{field}</td>
-              <td className="border border-gray-300 p-2">
-                <select
-                  value={mapping[field]}
-                  onChange={(e) => handleMappingChange(field, e.target.value)}
-                  className="w-full p-1"
-                >
-                  <option value="">Select a column</option>
-                  {headers.map((header) => (
-                    <option key={header} value={header}>
-                      {header}
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
+  {Object.keys(mapping).map((field) => (
+    <tr key={field}>
+      <td className="border border-gray-300 p-2">{field}</td>
+      <td className="border border-gray-300 p-2">
+        <select
+          value={mapping[field]}
+          onChange={(e) => handleMappingChange(field, e.target.value)}
+          className="w-full p-1"
+        >
+          <option value="">Select a column</option>
+          {headers.map((header, index) => (
+            <option key={`${header}-${index}`} value={header}>
+              {header}
+            </option>
           ))}
-        </tbody>
+        </select>
+      </td>
+    </tr>
+  ))}
+</tbody>
       </table>
       <button
         onClick={handleSubmit}

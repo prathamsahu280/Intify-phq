@@ -3,20 +3,18 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 interface FilterSelectionProps {
-  headers: string[];
   onComplete: (filters: { [key: string]: string }) => void;
   columnMapping: Record<string, string>;
   setCurrentStep: (step: 'import' | 'mapping' | 'filters' | 'main') => void;
 }
 
 export const FilterSelection: React.FC<FilterSelectionProps> = ({ 
-  headers, 
   onComplete, 
   columnMapping, 
   setCurrentStep 
 }) => {
+  const [headers, setHeaders] = useState<string[]>([]);
   const [selectedFields, setSelectedFields] = useState<{ [key: string]: string }>({});
-  const [availableHeaders, setAvailableHeaders] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const fileType = Cookies.get('fileType');
@@ -28,16 +26,18 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({
     const fetchHeaders = async () => {
       try {
         let response;
-        if (fileType === 'spreadsheet') {
+        if (fileType === 'spreadsheet' && spreadsheetId) {
           response = await axios.get(`http://localhost:5000/api/spreadsheet/headers?id=${spreadsheetId}&name=${sheetName}`);
         } else if (fileType === 'excel' && excelFilePath) {
           response = await axios.get(`http://localhost:5000/api/excel/headers?filePath=${encodeURIComponent(excelFilePath)}&sheetName=${encodeURIComponent(sheetName || '')}`);
         } else {
-          throw new Error('Invalid file type or missing file path');
+          throw new Error('Invalid file type or missing data');
         }
-        const fetchedHeaders = response.data;
-        const mappedColumns = Object.values(columnMapping);
-        setAvailableHeaders(fetchedHeaders.filter((header: string) => !mappedColumns.includes(header)));
+        
+        // Filter out headers that are already mapped in columnMapping
+        const mappedHeaders = Object.values(columnMapping);
+        const availableHeaders = response.data.filter((header: string) => !mappedHeaders.includes(header));
+        setHeaders(availableHeaders);
       } catch (error) {
         console.error('Error fetching headers:', error);
         setError('Failed to fetch headers. Please try again.');
@@ -45,12 +45,6 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({
     };
 
     fetchHeaders();
-
-    // Load filters from cookies
-    const storedFilters = Cookies.get('usedFilters');
-    if (storedFilters) {
-      setSelectedFields(JSON.parse(storedFilters));
-    }
   }, [fileType, spreadsheetId, excelFilePath, sheetName, columnMapping]);
 
   const handleFieldChange = (header: string) => {
@@ -80,10 +74,6 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({
     setCurrentStep('mapping');
   };
 
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
   return (
     <div className="p-4">
       <button
@@ -93,28 +83,33 @@ export const FilterSelection: React.FC<FilterSelectionProps> = ({
         Go Back
       </button>
       <h2 className="text-2xl font-bold mb-4">Select Fields for Filtering</h2>
-      {availableHeaders.map(header => (
-        <div key={`field-${header}`} className="flex items-center mb-2">
-          <input
-            type="checkbox"
-            id={`field-${header}`}
-            checked={header in selectedFields}
-            onChange={() => handleFieldChange(header)}
-            className="mr-2"
-          />
-          <label htmlFor={`field-${header}`} className="mr-2">{header}</label>
-          {header in selectedFields && (
-            <select
-              value={selectedFields[header]}
-              onChange={(e) => handleTypeChange(header, e.target.value)}
-              className="p-1 border rounded"
-            >
-              <option value="Text">Text</option>
-              <option value="Numbers">Numbers</option>
-            </select>
-          )}
-        </div>
-      ))}
+      {error && <div className="text-red-500 mb-4">{error}</div>}
+      {headers.length === 0 ? (
+        <p>No additional fields available for filtering.</p>
+      ) : (
+        headers.map(header => (
+          <div key={`field-${header}`} className="flex items-center mb-2">
+            <input
+              type="checkbox"
+              id={`field-${header}`}
+              checked={header in selectedFields}
+              onChange={() => handleFieldChange(header)}
+              className="mr-2"
+            />
+            <label htmlFor={`field-${header}`} className="mr-2">{header}</label>
+            {header in selectedFields && (
+              <select
+                value={selectedFields[header]}
+                onChange={(e) => handleTypeChange(header, e.target.value)}
+                className="p-1 border rounded"
+              >
+                <option value="Text">Text</option>
+                <option value="Numbers">Numbers</option>
+              </select>
+            )}
+          </div>
+        ))
+      )}
       <button
         onClick={handleConfirm}
         className="mt-4 p-2 px-4 bg-blue-500 text-white rounded"
